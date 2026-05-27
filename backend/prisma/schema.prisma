@@ -1,0 +1,699 @@
+// GymOS India - Complete Database Schema
+// PostgreSQL + Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  OWNER
+  MANAGER
+  TRAINER
+  RECEPTIONIST
+  MEMBER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+  PENDING
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIAL
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  RAZORPAY
+  CHEQUE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum NotificationType {
+  RENEWAL_REMINDER
+  PAYMENT_DUE
+  WELCOME
+  BIRTHDAY
+  ATTENDANCE_ALERT
+  PROMOTIONAL
+  TRAINER_ASSIGNED
+  MEMBERSHIP_EXPIRED
+  WORKOUT_MISSED
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum PlanType {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  CUSTOM
+  DAILY
+  PT_SESSION
+}
+
+enum GoalType {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  STRENGTH
+  ENDURANCE
+  FLEXIBILITY
+  GENERAL_FITNESS
+  SPORTS_PERFORMANCE
+  REHABILITATION
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TrainerStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+enum CheckInMethod {
+  QR_SCAN
+  MANUAL
+  MOBILE_APP
+  BIOMETRIC
+}
+
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+// ============================================================
+// ORGANIZATION (GYM OWNER / BRAND)
+// ============================================================
+
+model Organization {
+  id                String           @id @default(uuid())
+  name              String
+  slug              String           @unique
+  logoUrl           String?
+  primaryColor      String?          @default("#E53E3E")
+  phone             String
+  email             String?
+  website           String?
+  gstin             String?
+  address           String?
+  city              String?
+  state             String?
+  pincode           String?
+  subscriptionPlan  SubscriptionPlan @default(STARTER)
+  subscriptionExpiry DateTime?
+  isActive          Boolean          @default(true)
+  whatsappEnabled   Boolean          @default(false)
+  smsEnabled        Boolean          @default(false)
+  maxBranches       Int              @default(1)
+  maxMembers        Int              @default(200)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  branches          Branch[]
+  users             User[]
+  membershipPlans   MembershipPlan[]
+  notificationTemplates NotificationTemplate[]
+  settings          OrganizationSettings?
+
+  @@index([slug])
+}
+
+model OrganizationSettings {
+  id                    String       @id @default(uuid())
+  organizationId        String       @unique
+  organization          Organization @relation(fields: [organizationId], references: [id])
+  
+  // WhatsApp Settings
+  whatsappApiToken      String?
+  whatsappPhoneNumberId String?
+  whatsappBusinessId    String?
+  
+  // SMS Settings
+  smsProvider           String?      @default("MSG91")
+  smsApiKey             String?
+  smsSenderId           String?
+  
+  // Razorpay
+  razorpayKeyId         String?
+  razorpayKeySecret     String?
+  
+  // Reminder Settings
+  renewal7DayEnabled    Boolean      @default(true)
+  renewal3DayEnabled    Boolean      @default(true)
+  renewalDayEnabled     Boolean      @default(true)
+  renewalPost3DayEnabled Boolean     @default(true)
+  renewalPost7DayEnabled Boolean     @default(true)
+  
+  // Attendance Settings
+  absentAlertDays       Int          @default(5)
+  lateCheckInMinutes    Int          @default(30)
+  
+  // GST
+  gstEnabled            Boolean      @default(false)
+  gstRate               Float        @default(18)
+  
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+}
+
+// ============================================================
+// BRANCH
+// ============================================================
+
+model Branch {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  code           String       // Short code e.g. "GYM-01"
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  phone          String?
+  email          String?
+  managerId      String?
+  status         BranchStatus @default(ACTIVE)
+  openTime       String?      @default("06:00")
+  closeTime      String?      @default("22:00")
+  capacity       Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  users          User[]
+  members        Member[]
+  attendance     Attendance[]
+  payments       Payment[]
+  expenses       Expense[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+// ============================================================
+// USER (STAFF)
+// ============================================================
+
+model User {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  branchId       String?
+  branch         Branch?      @relation(fields: [branchId], references: [id])
+  
+  name           String
+  phone          String
+  email          String?
+  passwordHash   String?
+  role           UserRole     @default(TRAINER)
+  gender         Gender?
+  profilePhotoUrl String?
+  isActive       Boolean      @default(true)
+  lastLoginAt    DateTime?
+  
+  // OTP Auth
+  otpCode        String?
+  otpExpiry      DateTime?
+  
+  // Trainer specific
+  specialization String[]     @default([])
+  experience     Int?         // years
+  bio            String?
+  rating         Float?       @default(0)
+  commission     Float?       @default(0) // percentage
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  trainedMembers Member[]     @relation("TrainerMembers")
+  attendance     TrainerAttendance[]
+  ptSessions     PTSession[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+
+  @@unique([organizationId, phone])
+  @@index([organizationId, role])
+}
+
+// ============================================================
+// MEMBERSHIP PLAN
+// ============================================================
+
+model MembershipPlan {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  name           String       // "Monthly Basic", "3 Mahine"
+  nameHindi      String?      // Hindi name
+  planType       PlanType
+  durationDays   Int
+  price          Float
+  discountedPrice Float?
+  
+  includesPT     Boolean      @default(false)
+  ptSessions     Int          @default(0)
+  
+  features       String[]     @default([])
+  isActive       Boolean      @default(true)
+  isPopular      Boolean      @default(false)
+  
+  gstAmount      Float?       @default(0)
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  memberships    Membership[]
+
+  @@index([organizationId])
+}
+
+// ============================================================
+// MEMBER
+// ============================================================
+
+model Member {
+  id              String       @id @default(uuid())
+  organizationId  String
+  branchId        String
+  branch          Branch       @relation(fields: [branchId], references: [id])
+  
+  memberId        String       // Human readable: GYM-001
+  name            String
+  phone           String
+  alternatePhone  String?
+  email           String?
+  dateOfBirth     DateTime?
+  gender          Gender?
+  address         String?
+  city            String?
+  
+  profilePhotoUrl String?
+  qrCode          String?      @unique
+  
+  // Emergency Contact
+  emergencyName   String?
+  emergencyPhone  String?
+  emergencyRelation String?
+  
+  // Medical
+  medicalNotes    String?
+  bloodGroup      String?
+  
+  // Goals
+  goal            GoalType?
+  targetWeight    Float?
+  currentWeight   Float?
+  height          Float?
+  
+  // Trainer
+  trainerId       String?
+  trainer         User?        @relation("TrainerMembers", fields: [trainerId], references: [id])
+  
+  // Status
+  status          MembershipStatus @default(PENDING)
+  joinDate        DateTime     @default(now())
+  referredBy      String?
+  referredMemberId String?
+  
+  // Gamification
+  loyaltyPoints   Int          @default(0)
+  streakDays      Int          @default(0)
+  totalVisits     Int          @default(0)
+  
+  isActive        Boolean      @default(true)
+  notes           String?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  memberships     Membership[]
+  attendance      Attendance[]
+  payments        Payment[]
+  ptSessions      PTSession[]
+  notifications   Notification[]
+  bodyMetrics     BodyMetric[]
+  
+  @@unique([branchId, memberId])
+  @@index([branchId, phone])
+  @@index([branchId, status])
+}
+
+// ============================================================
+// MEMBERSHIP
+// ============================================================
+
+model Membership {
+  id              String           @id @default(uuid())
+  memberId        String
+  member          Member           @relation(fields: [memberId], references: [id])
+  planId          String
+  plan            MembershipPlan   @relation(fields: [planId], references: [id])
+  
+  startDate       DateTime
+  endDate         DateTime
+  status          MembershipStatus @default(ACTIVE)
+  
+  amountPaid      Float
+  amountDue       Float            @default(0)
+  
+  ptSessionsTotal Int              @default(0)
+  ptSessionsUsed  Int              @default(0)
+  
+  freezeStart     DateTime?
+  freezeEnd       DateTime?
+  
+  renewalReminderSent Boolean      @default(false)
+  
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  payments        Payment[]
+
+  @@index([memberId])
+  @@index([endDate, status])
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+
+model Attendance {
+  id              String           @id @default(uuid())
+  memberId        String
+  member          Member           @relation(fields: [memberId], references: [id])
+  branchId        String
+  branch          Branch           @relation(fields: [branchId], references: [id])
+  
+  checkInTime     DateTime         @default(now())
+  checkOutTime    DateTime?
+  
+  status          AttendanceStatus @default(PRESENT)
+  checkInMethod   CheckInMethod    @default(MANUAL)
+  
+  markedBy        String?          // userId who marked
+  notes           String?
+  
+  date            DateTime         @default(dbgenerated("CURRENT_DATE")) @db.Date
+
+  @@index([memberId, date])
+  @@index([branchId, date])
+}
+
+model TrainerAttendance {
+  id            String           @id @default(uuid())
+  trainerId     String
+  trainer       User             @relation(fields: [trainerId], references: [id])
+  
+  checkInTime   DateTime         @default(now())
+  checkOutTime  DateTime?
+  status        AttendanceStatus @default(PRESENT)
+  
+  date          DateTime         @default(dbgenerated("CURRENT_DATE")) @db.Date
+
+  @@index([trainerId, date])
+}
+
+// ============================================================
+// PAYMENT
+// ============================================================
+
+model Payment {
+  id              String         @id @default(uuid())
+  memberId        String
+  member          Member         @relation(fields: [memberId], references: [id])
+  branchId        String
+  branch          Branch         @relation(fields: [branchId], references: [id])
+  membershipId    String?
+  membership      Membership?    @relation(fields: [membershipId], references: [id])
+  
+  receiptNumber   String         @unique // GYM-REC-001
+  amount          Float
+  gstAmount       Float          @default(0)
+  totalAmount     Float
+  
+  method          PaymentMethod
+  status          PaymentStatus  @default(PENDING)
+  
+  // Razorpay
+  razorpayOrderId  String?
+  razorpayPaymentId String?
+  
+  // UPI
+  upiTransactionId String?
+  upiId            String?
+  
+  paidAt          DateTime?
+  dueDate         DateTime?
+  
+  description     String?
+  notes           String?
+  
+  collectedBy     String?        // userId
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([memberId])
+  @@index([branchId, createdAt])
+  @@index([status])
+}
+
+// ============================================================
+// PT SESSION
+// ============================================================
+
+model PTSession {
+  id            String    @id @default(uuid())
+  memberId      String
+  member        Member    @relation(fields: [memberId], references: [id])
+  trainerId     String
+  trainer       User      @relation(fields: [trainerId], references: [id])
+  
+  scheduledAt   DateTime
+  completedAt   DateTime?
+  duration      Int       @default(60) // minutes
+  
+  isCompleted   Boolean   @default(false)
+  isCancelled   Boolean   @default(false)
+  
+  memberRating  Int?      // 1-5
+  memberFeedback String?
+  
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([memberId])
+  @@index([trainerId])
+}
+
+// ============================================================
+// BODY METRICS
+// ============================================================
+
+model BodyMetric {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  
+  recordedAt  DateTime @default(now())
+  weight      Float?
+  height      Float?
+  bmi         Float?
+  bodyFat     Float?
+  muscleMass  Float?
+  
+  chest       Float?
+  waist       Float?
+  hips        Float?
+  arms        Float?
+  thighs      Float?
+  
+  notes       String?
+  recordedBy  String?  // trainerId
+
+  @@index([memberId, recordedAt])
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model NotificationTemplate {
+  id             String              @id @default(uuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  
+  type           NotificationType
+  channel        NotificationChannel
+  language       String              @default("hi") // hi, en, hinglish
+  
+  name           String
+  subject        String?
+  body           String              // Template with {{variables}}
+  
+  isActive       Boolean             @default(true)
+  isDefault      Boolean             @default(false)
+  
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([organizationId, type, channel, language])
+}
+
+model Notification {
+  id          String              @id @default(uuid())
+  memberId    String?
+  member      Member?             @relation(fields: [memberId], references: [id])
+  userId      String?
+  user        User?               @relation(fields: [userId], references: [id])
+  
+  type        NotificationType
+  channel     NotificationChannel
+  
+  phone       String?
+  email       String?
+  
+  subject     String?
+  body        String
+  
+  status      NotificationStatus  @default(PENDING)
+  
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedAt    DateTime?
+  failReason  String?
+  
+  // External IDs
+  whatsappMsgId String?
+  smsMsgId      String?
+  
+  scheduledFor  DateTime?
+  
+  createdAt   DateTime            @default(now())
+
+  @@index([memberId])
+  @@index([status, scheduledFor])
+}
+
+// ============================================================
+// EXPENSE
+// ============================================================
+
+model Expense {
+  id          String    @id @default(uuid())
+  branchId    String
+  branch      Branch    @relation(fields: [branchId], references: [id])
+  
+  category    String    // Rent, Salary, Electricity, Equipment etc.
+  description String
+  amount      Float
+  date        DateTime  @default(now())
+  
+  paymentMethod PaymentMethod @default(CASH)
+  receiptUrl  String?
+  
+  addedBy     String    // userId
+  notes       String?
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([branchId, date])
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  action      String   // CREATE_MEMBER, UPDATE_PAYMENT, DELETE_MEMBER etc.
+  entity      String   // Member, Payment, Membership etc.
+  entityId    String?
+  
+  oldValue    Json?
+  newValue    Json?
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// REFRESH TOKENS
+// ============================================================
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  token       String   @unique
+  expiresAt   DateTime
+  isRevoked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
