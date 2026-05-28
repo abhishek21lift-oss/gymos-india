@@ -7,8 +7,10 @@ import { AppModule } from './app.module';
 
 async function seedDatabaseIfEmpty() {
   const prisma = new PrismaClient();
+
   try {
     const orgCount = await prisma.organization.count();
+
     if (orgCount > 0) {
       console.log('✅ Database already seeded, skipping...');
       return;
@@ -50,6 +52,7 @@ async function seedDatabaseIfEmpty() {
     });
 
     const ownerPass = await bcrypt.hash('Gym@1234', 10);
+
     await prisma.user.create({
       data: {
         organizationId: org.id,
@@ -65,11 +68,36 @@ async function seedDatabaseIfEmpty() {
     });
 
     const plansData = [
-      { name: 'Monthly Basic', planType: 'MONTHLY', days: 30, price: 999 },
-      { name: 'Monthly Premium', planType: 'MONTHLY', days: 30, price: 1499 },
-      { name: 'Quarterly', planType: 'QUARTERLY', days: 90, price: 2499 },
-      { name: '6 Months', planType: 'HALF_YEARLY', days: 180, price: 4499 },
-      { name: 'Annual', planType: 'YEARLY', days: 365, price: 7999 },
+      {
+        name: 'Monthly Basic',
+        planType: 'MONTHLY',
+        days: 30,
+        price: 999,
+      },
+      {
+        name: 'Monthly Premium',
+        planType: 'MONTHLY',
+        days: 30,
+        price: 1499,
+      },
+      {
+        name: 'Quarterly',
+        planType: 'QUARTERLY',
+        days: 90,
+        price: 2499,
+      },
+      {
+        name: '6 Months',
+        planType: 'HALF_YEARLY',
+        days: 180,
+        price: 4499,
+      },
+      {
+        name: 'Annual',
+        planType: 'YEARLY',
+        days: 365,
+        price: 7999,
+      },
     ];
 
     for (const p of plansData) {
@@ -101,59 +129,69 @@ async function seedDatabaseIfEmpty() {
     console.log('🎉 Database seeded successfully!');
     console.log('📱 Login: 9876543210 / Gym@1234');
   } catch (error) {
-    console.error('Seed error:', error);
+    console.error('❌ Seed error:', error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
-  });
+  try {
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug'],
+    });
 
-  app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api/v1');
 
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-  });
+    app.enableCors({
+      origin: process.env.FRONTEND_URL || '*',
+      credentials: true,
+    });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
 
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('GymOS India API')
-      .setDescription('Hindi-First WhatsApp-First Gym Operating System')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .addTag('auth', 'Authentication')
-      .addTag('members', 'Member Management')
-      .addTag('attendance', 'Attendance System')
-      .addTag('payments', 'Payment Management')
-      .addTag('trainers', 'Trainer Management')
-      .addTag('renewals', 'Renewal Automation')
-      .addTag('notifications', 'Notification System')
-      .addTag('analytics', 'Analytics & Reports')
-      .build();
+    // Swagger only in development
+    if (process.env.NODE_ENV !== 'production') {
+      const config = new DocumentBuilder()
+        .setTitle('GymOS India API')
+        .setDescription(
+          'Hindi-First WhatsApp-First Gym Operating System',
+        )
+        .setVersion('1.0')
+        .addBearerAuth()
+        .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+      const document = SwaggerModule.createDocument(app, config);
+
+      SwaggerModule.setup('api/docs', app, document);
+    }
+
+    // Seed database before starting server
+    await seedDatabaseIfEmpty();
+
+    // Render provides PORT automatically
+    const port = Number(process.env.PORT) || 3001;
+
+    // IMPORTANT FOR RENDER
+    await app.listen(port, '0.0.0.0');
+
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(
+      `📚 API Docs: http://localhost:${port}/api/docs`,
+    );
+  } catch (error) {
+    console.error('❌ Application failed to start:', error);
+    process.exit(1);
   }
-
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🏋️ GymOS India Backend running on port ${port}`);
-  console.log(`📚 API Docs: http://localhost:${port}/api/docs`);
-
-  await seedDatabaseIfEmpty();
 }
 
 bootstrap();
