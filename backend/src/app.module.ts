@@ -33,14 +33,16 @@ import { HealthModule } from './modules/health/health.module';
 
     ScheduleModule.forRoot(),
 
-    BullModule.forRoot({
-      redis: process.env.REDIS_URL || {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-        ...(process.env.REDIS_TLS === 'true' ? { tls: {} } : {}),
-      },
-    }),
+    ...(process.env.REDIS_URL || process.env.REDIS_HOST
+      ? [BullModule.forRoot({
+          redis: process.env.REDIS_URL || {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD,
+            ...(process.env.REDIS_TLS === 'true' ? { tls: {} } : {}),
+          },
+        })]
+      : []),
 
     PrismaModule,
     AuthModule,
