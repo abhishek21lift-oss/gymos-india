@@ -32,11 +32,14 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     ScheduleModule.forRoot(),
 
     BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-      },
+      redis: process.env.REDIS_URL
+        ? { url: process.env.REDIS_URL, tls: {} }
+        : {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD,
+            ...(process.env.REDIS_TLS === 'true' ? { tls: {} } : {}),
+          },
     }),
 
     PrismaModule,
