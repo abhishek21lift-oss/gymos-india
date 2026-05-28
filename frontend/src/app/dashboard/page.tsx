@@ -6,7 +6,6 @@ import { useAuthStore } from '@/lib/store';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Header } from '@/components/layout/Header';
 import { StatCard } from '@/components/shared/StatCard';
-import { MemberRow } from '@/components/shared/MemberRow';
 import {
   IndianRupee, Users, UserCheck, AlertTriangle,
   Clock, TrendingUp, Zap, RefreshCw,
