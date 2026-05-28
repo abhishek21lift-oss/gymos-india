@@ -18,6 +18,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
       { name: 'short', ttl: 1000, limit: 10 },
       { name: 'medium', ttl: 10000, limit: 50 },
       { name: 'long', ttl: 60000, limit: 200 },
+      { name: 'auth', ttl: 60000, limit: 5 },
     ]),
 
     ScheduleModule.forRoot(),
@@ -54,6 +56,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     DashboardModule,
     WhatsappModule,
     UploadsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

@@ -48,7 +48,8 @@ async function main() {
   console.log('✅ Branch created:', branch.name);
 
   // 3. Create Owner
-  const ownerPass = await bcrypt.hash('Gym@1234', 10);
+  const ownerPlainPassword = process.env.SEED_OWNER_PASSWORD || 'Gym@1234';
+  const ownerPass = await bcrypt.hash(ownerPlainPassword, 10);
   const owner = await prisma.user.upsert({
     where: { organizationId_phone: { organizationId: org.id, phone: '9876543210' } },
     update: {},
@@ -65,6 +66,7 @@ async function main() {
     },
   });
   console.log('✅ Owner created:', owner.name);
+  console.log('📱 Owner phone: 9876543210');
 
   // 4. Create Trainers
   const trainers = [
@@ -83,7 +85,7 @@ async function main() {
         branchId: branch.id,
         name: t.name,
         phone: t.phone,
-        passwordHash: await bcrypt.hash('Trainer@123', 10),
+        passwordHash: await bcrypt.hash(process.env.SEED_TRAINER_PASSWORD || 'Trainer@123', 10),
         role: 'TRAINER',
         gender: 'MALE',
         specialization: t.spec,
@@ -265,11 +267,11 @@ async function main() {
 
   console.log('\n🎉 Seeding complete!\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📱 Owner Login: 9876543210 (OTP) or password: Gym@1234');
   console.log('🏋️  Gym: 619 Fitness Studio');
   console.log('🌐 Frontend: http://localhost:3000');
   console.log('🔧 API: http://localhost:3001/api/docs');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.log('⚠️  Change default passwords immediately after first login!');
 }
 
 main()

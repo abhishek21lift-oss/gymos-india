@@ -10,8 +10,8 @@ export enum GoalType {
 }
 
 export class CreateMemberDto {
-  @ApiProperty() @IsString() name: string;
-  @ApiProperty() @IsString() phone: string;
+  @ApiProperty() @IsString() name!: string;
+  @ApiProperty() @IsString() phone!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() alternatePhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;

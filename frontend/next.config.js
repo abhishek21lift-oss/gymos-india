@@ -1,8 +1,18 @@
 /** @type {import('next').NextConfig} */
 let nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   images: {
-    domains: ['gymos-india-uploads.s3.ap-south-1.amazonaws.com', 'res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'gymos-india-uploads.s3.ap-south-1.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
@@ -16,7 +26,7 @@ try {
   const withPWA = require('next-pwa')({
     dest: 'public',
     register: true,
-    skipWaiting: true,
+    skipWaiting: false,
     disable: process.env.NODE_ENV === 'development',
   });
   module.exports = withPWA(nextConfig);

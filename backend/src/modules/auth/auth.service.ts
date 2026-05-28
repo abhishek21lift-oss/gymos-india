@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'node:crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { OtpService } from './otp.service';
 
@@ -37,11 +38,12 @@ export class AuthService {
 
     const otp = this.otpService.generateOtp();
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
 
     if (user) {
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { otpCode: otp, otpExpiry: expiry },
+        data: { otpCode: otpHash, otpExpiry: expiry },
       });
     }
 
@@ -65,7 +67,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    if (!user.otpCode || user.otpCode !== otp) {
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    if (!user.otpCode || user.otpCode !== otpHash) {
       throw new UnauthorizedException('Invalid OTP');
     }
 

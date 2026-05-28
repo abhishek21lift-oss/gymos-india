@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import * as crypto from 'node:crypto';
 
 @Injectable()
 export class OtpService {
@@ -9,26 +10,21 @@ export class OtpService {
   constructor(private config: ConfigService) {}
 
   generateOtp(length: number = 6): string {
-    const digits = '0123456789';
-    let otp = '';
-    for (let i = 0; i < length; i++) {
-      otp += digits[Math.floor(Math.random() * 10)];
-    }
-    return otp;
+    const min = Math.pow(10, length - 1);
+    const max = Math.pow(10, length) - 1;
+    return String(crypto.randomInt(min, max + 1));
   }
 
   async sendOtp(phone: string, otp: string): Promise<void> {
     const cleanPhone = phone.replace(/\D/g, '');
     const phoneWithCode = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
-    // Try MSG91 first
     const apiKey = this.config.get('MSG91_API_KEY');
     if (apiKey) {
       await this.sendViaMSG91(phoneWithCode, otp, apiKey);
       return;
     }
 
-    // Fallback: log in development
     this.logger.log(`[DEV] OTP for ${phone}: ${otp}`);
   }
 
@@ -45,8 +41,9 @@ export class OtpService {
         timeout: 8000,
       });
       this.logger.log(`OTP sent via MSG91 to ${phone}`);
-    } catch (err) {
-      this.logger.error(`MSG91 error: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`MSG91 error: ${message}`);
       throw new Error('Failed to send OTP. Please try again.');
     }
   }

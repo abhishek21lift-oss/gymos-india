@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -7,27 +5,36 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: gymos_user
-      POSTGRES_PASSWORD: gymos_pass_2024
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gymos_pass_2024}
       POSTGRES_DB: gymos_india
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - gymos_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymos_user -d gymos_india"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: gymos_redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass redis_gymos_2024
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_gymos_2024}
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     networks:
       - gymos_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -36,28 +43,24 @@ services:
     container_name: gymos_backend
     restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://gymos_user:gymos_pass_2024@postgres:5432/gymos_india
-      REDIS_URL: redis://:redis_gymos_2024@redis:6379
+      DATABASE_URL: postgresql://gymos_user:${POSTGRES_PASSWORD:-gymos_pass_2024}@postgres:5432/gymos_india
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_gymos_2024}@redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
-      WHATSAPP_API_TOKEN: ${WHATSAPP_API_TOKEN}
-      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
-      MSG91_API_KEY: ${MSG91_API_KEY}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      AWS_REGION: ap-south-1
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       PORT: 3001
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     volumes:
-      - ./backend/uploads:/app/uploads
+      - backend_uploads:/app/uploads
     networks:
       - gymos_network
 
@@ -70,11 +73,11 @@ services:
     depends_on:
       - backend
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3001}
-      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://backend:3001}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001}
       NEXT_PUBLIC_RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - gymos_network
 
@@ -82,6 +85,8 @@ services:
     image: nginx:alpine
     container_name: gymos_nginx
     restart: unless-stopped
+    profiles:
+      - production
     depends_on:
       - frontend
       - backend
@@ -97,6 +102,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  backend_uploads:
 
 networks:
   gymos_network:

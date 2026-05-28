@@ -1,10 +1,47 @@
-node_modules/
-dist/
-.next/
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# environment variables
 .env
 .env.local
 .env.production
+.env.development
+
+# dependencies
+node_modules/
+
+# builds
+dist/
+.next/
+build/
+
+# logs
 *.log
-.DS_Store
-.vercel
-/uploads/
+logs/
+
+# docker
+docker/ssl/
+
+# vercel
+.vercel/
+
+# uploads (local dev only)
+backend/uploads/*
+
+# temp
+tmp/
+temp/
+*.tmp
+
+# coverage
+coverage/
+
+# generated
+*.tsbuildinfo

@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsNumber, IsInt, Min, Max, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class MemberQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
@@ -12,29 +12,23 @@ export class MemberQueryDto {
 }
 
 export class UpdateMemberDto {
-  name?: string;
-  phone?: string;
-  alternatePhone?: string;
-  email?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  city?: string;
-  emergencyName?: string;
-  emergencyPhone?: string;
-  emergencyRelation?: string;
-  medicalNotes?: string;
-  bloodGroup?: string;
-  goal?: string;
-  targetWeight?: number;
-  currentWeight?: number;
-  height?: number;
-  trainerId?: string;
-  notes?: string;
-}
-
-export class AssignMembershipDto {
-  @ApiProperty() @IsString() planId: string;
-  @ApiProperty() @IsDateString() startDate: string;
-  @ApiProperty() @IsNumber() amountPaid: number;
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() alternatePhone?: string;
+  @IsOptional() @IsString() email?: string;
+  @IsOptional() @IsString() dateOfBirth?: string;
+  @IsOptional() @IsString() gender?: string;
+  @IsOptional() @IsString() address?: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() emergencyName?: string;
+  @IsOptional() @IsString() emergencyPhone?: string;
+  @IsOptional() @IsString() emergencyRelation?: string;
+  @IsOptional() @IsString() medicalNotes?: string;
+  @IsOptional() @IsString() bloodGroup?: string;
+  @IsOptional() @IsString() goal?: string;
+  @IsOptional() @IsNumber() targetWeight?: number;
+  @IsOptional() @IsNumber() currentWeight?: number;
+  @IsOptional() @IsNumber() height?: number;
+  @IsOptional() @IsString() trainerId?: string;
+  @IsOptional() @IsString() notes?: string;
 }

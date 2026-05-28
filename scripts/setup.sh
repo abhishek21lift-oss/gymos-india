@@ -30,7 +30,7 @@ echo -e "${BLUE}📋 Checking prerequisites...${NC}"
 check_cmd node
 check_cmd npm
 check_cmd docker
-check_cmd docker-compose
+check_cmd docker
 echo ""
 
 # Check Node version
@@ -42,7 +42,7 @@ fi
 
 # Start Docker services
 echo -e "${BLUE}🐳 Starting PostgreSQL and Redis...${NC}"
-docker-compose up -d postgres redis
+docker compose up -d postgres redis
 sleep 5
 echo -e "${GREEN}✅ Database services started${NC}"
 echo ""
@@ -52,8 +52,25 @@ echo -e "${BLUE}⚙️  Setting up backend...${NC}"
 cd backend
 
 if [ ! -f .env ]; then
-  cp .env.example .env
-  echo -e "${YELLOW}⚠️  Created backend/.env — please update with your credentials${NC}"
+  cat > .env << EOF
+# Server
+NODE_ENV=development
+PORT=3001
+FRONTEND_URL=http://localhost:3000
+
+# Database (local dev uses Docker Postgres)
+DATABASE_URL=postgresql://gymos_user:gymos_pass_2024@localhost:5432/gymos_india
+
+# Redis (local dev uses Docker Redis)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=redis_gymos_2024
+
+# JWT (dev only - generate new for production)
+JWT_SECRET=dev_jwt_secret_32_chars_long_placeholder
+JWT_REFRESH_SECRET=dev_refresh_secret_32_chars_long_placeholder
+EOF
+  echo -e "${YELLOW}⚠️  Created backend/.env for local development${NC}"
 fi
 
 npm install --silent
@@ -97,7 +114,10 @@ echo "  🌐 App:     http://localhost:3000"
 echo "  🔧 API:     http://localhost:3001/api/docs"
 echo "  🗄️  DB:      localhost:5432"
 echo ""
-echo "Demo Login:"
+echo "Seed credentials (printed only during first run):"
 echo "  📱 Phone:   9876543210"
-echo "  🔑 Password: Gym@1234"
+echo "  🔑 Password: check backend startup logs"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo ""
+echo -e "${YELLOW}⚠️  IMPORTANT: Change the default password immediately after first login!${NC}"
