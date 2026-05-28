@@ -1,8 +1,7 @@
-// BottomNav.tsx
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, Users, CheckSquare, IndianRupee, RotateCcw, Dumbbell } from 'lucide-react';
+import { LayoutDashboard, Users, CheckSquare, IndianRupee, RotateCcw } from 'lucide-react';
 
 type NavTab = 'dashboard' | 'members' | 'attendance' | 'payments' | 'renewals' | 'trainers';
 
@@ -22,8 +21,8 @@ export function BottomNav({ active }: { active: NavTab }) {
         const isActive = active === item.id;
         return (
           <Link key={item.id} href={item.href} className={`nav-item ${isActive ? 'active' : ''}`}>
-            <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-            <span className={`text-[10px] font-medium ${isActive ? 'font-bold' : ''}`}>
+            <Icon className={`w-5 h-5 transition-all duration-300 ${isActive ? 'scale-110 stroke-[2.5]' : 'stroke-[1.5]'}`} />
+            <span className={`text-[10px] tracking-wide transition-all duration-300 ${isActive ? 'font-bold' : 'font-medium'}`}>
               {item.label}
             </span>
           </Link>
