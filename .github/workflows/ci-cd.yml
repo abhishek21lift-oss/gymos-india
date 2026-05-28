@@ -45,19 +45,25 @@ jobs:
         run: cd backend && npx prisma generate
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
+          DIRECT_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
 
       - name: Run migrations
         run: cd backend && npx prisma migrate deploy
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
+          DIRECT_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
 
       - name: Lint
         run: cd backend && npm run lint
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
+          DIRECT_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
 
       - name: Run tests
         run: cd backend && npm test
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
+          DIRECT_URL: postgresql://test_user:test_pass@localhost:5432/gymos_test
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
