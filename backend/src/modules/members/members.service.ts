@@ -40,7 +40,7 @@ export class MembersService {
         qrCode: qrData,
         branchId,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-      },
+      } as any,
       include: {
         trainer: { select: { id: true, name: true, phone: true } },
         branch: { select: { id: true, name: true } },

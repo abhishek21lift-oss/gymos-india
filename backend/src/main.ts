@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PlanType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AppModule } from './app.module';
 
@@ -77,7 +77,7 @@ async function seedDatabaseIfEmpty() {
         data: {
           organizationId: org.id,
           name: p.name,
-          planType: p.planType,
+          planType: p.planType as PlanType,
           durationDays: p.days,
           price: p.price,
           isActive: true,

@@ -1,7 +1,6 @@
-// member-query.dto.ts
-import { IsOptional, IsString, IsEnum, IsNumber, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsInt, Min, Max, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 export class MemberQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
@@ -9,10 +8,9 @@ export class MemberQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() trainerId?: string;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 20;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() expiringIn?: number; // days
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() expiringIn?: number;
 }
 
-// update-member.dto.ts  (PartialType of Create)
 export class UpdateMemberDto {
   name?: string;
   phone?: string;
@@ -34,10 +32,6 @@ export class UpdateMemberDto {
   trainerId?: string;
   notes?: string;
 }
-
-// assign-membership.dto.ts
-import { IsString, IsNumber, IsDateString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class AssignMembershipDto {
   @ApiProperty() @IsString() planId: string;
